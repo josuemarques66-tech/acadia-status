@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Status do AcaDIA</title>
+  <meta name="description" content="O AcaDIA está funcionando? Esta página fica fora do servidor principal e confere sozinha." />
+  <meta name="robots" content="noindex" />
+  <meta name="theme-color" content="#0b0f1a" />
+  <!-- Página de status FORA do Worker do AcaDIA (hospedar em outro serviço: Cloudflare Pages ou GitHub Pages).
+       Autossuficiente: CSS e script aqui dentro. Confere o site a cada 60 s, sem cookies e sem rastreamento. -->
+  <style>
+    :root { color-scheme: dark; }
+    body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 16px; box-sizing: border-box;
+      background: radial-gradient(circle at 20% 10%, #1e1b4b, #0b0f1a 60%); color: #e2e8f0; font-family: Inter, "Segoe UI", Arial, sans-serif; }
+    main { width: 100%; max-width: 520px; text-align: center; }
+    h1 { margin: 8px 0; font-size: 1.6rem; }
+    p { color: #cbd5e1; line-height: 1.6; overflow-wrap: anywhere; }
+    .item { display: flex; justify-content: space-between; gap: 12px; padding: 12px 16px; margin: 8px 0; border-radius: 14px; background: #161b2e; text-align: left; }
+    .ok { color: #4ade80; font-weight: 700; } .falha { color: #f87171; font-weight: 700; } .testando { color: #fde047; }
+    a.button { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 10px 22px; border-radius: 12px;
+      background: linear-gradient(135deg, #f59e0b, #ef4444); color: #fff; font-weight: 700; text-decoration: none; }
+    a.button:focus-visible { outline: 3px solid #fcd34d; outline-offset: 3px; }
+    small { color: #94a3b8; }
+  </style>
+</head>
+<body>
+  <main>
+    <p style="font-size:64px;margin:0" aria-hidden="true">🦫🛠️</p>
+    <h1>Status do AcaDIA</h1>
+    <p id="resumo" role="status">Conferindo…</p>
+    <div class="item"><span>Site e app</span><span id="s-site" class="testando">conferindo</span></div>
+    <div class="item"><span>Servidor (Capi, arquivos, avisos)</span><span id="s-api" class="testando">conferindo</span></div>
+    <p><a class="button" href="https://acadia.josuebot.com.br/">Abrir o AcaDIA</a></p>
+    <p><small>Esta página fica fora do servidor principal e confere sozinha a cada minuto. Última conferência: <span id="hora">—</span>.<br>
+      Precisa falar com a gente? contato@josuebot.com.br</small></p>
+  </main>
+  <script>
+    (() => {
+      const SITE = 'https://acadia.josuebot.com.br';
+      const marcar = (id, ok, texto) => { const el = document.getElementById(id); el.className = ok ? 'ok' : 'falha'; el.textContent = texto; };
+      const tempo = ms => new Promise((_, rej) => setTimeout(() => rej(new Error('tempo')), ms));
+      async function conferir() {
+        let site = false; let api = false;
+        try { await Promise.race([fetch(`${SITE}/robots.txt?status=${Date.now()}`, { mode: 'no-cors', cache: 'no-store' }), tempo(8000)]); site = true; } catch {}
+        try {
+          // /api/push/key responde sem login: mostra se o servidor (Worker) está de pé.
+          await Promise.race([fetch(`${SITE}/api/push/key?status=${Date.now()}`, { mode: 'no-cors', cache: 'no-store' }), tempo(8000)]); api = true;
+        } catch {}
+        marcar('s-site', site, site ? 'funcionando' : 'fora do ar');
+        marcar('s-api', api, api ? 'funcionando' : 'fora do ar');
+        document.getElementById('resumo').textContent = site && api ? 'Tudo funcionando.' : !navigator.onLine ? 'Você está sem internet.' : 'Estamos com instabilidade. Já estamos vendo. Nada que você fez se perdeu.';
+        document.getElementById('hora').textContent = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+      }
+      conferir(); setInterval(conferir, 60000);
+    })();
+  </script>
+</body>
+</html>
