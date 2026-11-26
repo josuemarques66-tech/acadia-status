@@ -26,12 +26,15 @@
 </head>
 <body>
   <main>
-    <p style="font-size:64px;margin:0" aria-hidden="true">🦫🛠️</p>
+    <p style="font-size:64px;margin:0" role="img" aria-label="Capi, o mascote do AcaDIA, com ferramentas">🦫🛠️</p>
     <h1>Status do AcaDIA</h1>
-    <p id="resumo" role="status">Conferindo…</p>
-    <div class="item"><span>Site e app</span><span id="s-site" class="testando">conferindo</span></div>
-    <div class="item"><span>Servidor (Capi, arquivos, avisos)</span><span id="s-api" class="testando">conferindo</span></div>
-    <div class="item"><span>Banco de dados (login, notas, mensagens)</span><span id="s-banco" class="testando">conferindo</span></div>
+    <p id="resumo" role="status" aria-live="polite">Conferindo…</p>
+    <div aria-live="polite" aria-label="Situação de cada parte do AcaDIA">
+      <div class="item"><span>Site e app</span><span id="s-site" class="testando">conferindo</span></div>
+      <div class="item"><span>Servidor (Capi, o assistente com IA, arquivos e avisos)</span><span id="s-api" class="testando">conferindo</span></div>
+      <div class="item"><span>Banco de dados (login, notas, mensagens)</span><span id="s-banco" class="testando">conferindo</span></div>
+    </div>
+    <p><small>O <strong>Capi</strong> é o assistente com inteligência artificial do AcaDIA, que ajuda a estudar e tira dúvidas sobre o app.</small></p>
     <p><a class="button" href="https://acadia.josuebot.com.br/">Abrir o AcaDIA</a></p>
     <p><small>Esta página fica fora do servidor principal e confere sozinha a cada minuto. Última conferência: <span id="hora">—</span>.<br>
       Precisa falar com a gente? contato@josuebot.com.br</small></p>
