@@ -31,6 +31,7 @@
     <p id="resumo" role="status">Conferindo…</p>
     <div class="item"><span>Site e app</span><span id="s-site" class="testando">conferindo</span></div>
     <div class="item"><span>Servidor (Capi, arquivos, avisos)</span><span id="s-api" class="testando">conferindo</span></div>
+    <div class="item"><span>Banco de dados (login, notas, mensagens)</span><span id="s-banco" class="testando">conferindo</span></div>
     <p><a class="button" href="https://acadia.josuebot.com.br/">Abrir o AcaDIA</a></p>
     <p><small>Esta página fica fora do servidor principal e confere sozinha a cada minuto. Última conferência: <span id="hora">—</span>.<br>
       Precisa falar com a gente? contato@josuebot.com.br</small></p>
@@ -40,16 +41,25 @@
       const SITE = 'https://acadia.josuebot.com.br';
       const marcar = (id, ok, texto) => { const el = document.getElementById(id); el.className = ok ? 'ok' : 'falha'; el.textContent = texto; };
       const tempo = ms => new Promise((_, rej) => setTimeout(() => rej(new Error('tempo')), ms));
+      const MODOS = { manutencao: 'Em manutenção programada. Volte em alguns minutos.', instabilidade: 'Estamos com instabilidade. Já estamos vendo.', 'alto-acesso': 'Muitos acessos agora. Pode demorar um pouco.' };
       async function conferir() {
-        let site = false; let api = false;
+        let site = false; let api = false; let banco = null; let modo = 'off';
         try { await Promise.race([fetch(`${SITE}/robots.txt?status=${Date.now()}`, { mode: 'no-cors', cache: 'no-store' }), tempo(8000)]); site = true; } catch {}
         try {
-          // /api/push/key responde sem login: mostra se o servidor (Worker) está de pé.
-          await Promise.race([fetch(`${SITE}/api/push/key?status=${Date.now()}`, { mode: 'no-cors', cache: 'no-store' }), tempo(8000)]); api = true;
-        } catch {}
+          // /api/health responde sem login: servidor de pé, banco respondendo e modo de manutenção.
+          const r = await Promise.race([fetch(`${SITE}/api/health`, { cache: 'no-store' }), tempo(8000)]);
+          const j = await r.json();
+          api = j.servidor === true; banco = j.banco === true; modo = j.modo || 'off';
+        } catch {
+          // Plano B (servidor antigo ou bloqueio de leitura): só confere se respondeu.
+          try { await Promise.race([fetch(`${SITE}/api/push/key?status=${Date.now()}`, { mode: 'no-cors', cache: 'no-store' }), tempo(8000)]); api = true; } catch {}
+        }
         marcar('s-site', site, site ? 'funcionando' : 'fora do ar');
         marcar('s-api', api, api ? 'funcionando' : 'fora do ar');
-        document.getElementById('resumo').textContent = site && api ? 'Tudo funcionando.' : !navigator.onLine ? 'Você está sem internet.' : 'Estamos com instabilidade. Já estamos vendo. Nada que você fez se perdeu.';
+        if (banco === null) { const el = document.getElementById('s-banco'); el.className = 'testando'; el.textContent = 'sem informação'; }
+        else marcar('s-banco', banco, banco ? 'funcionando' : 'com problema');
+        document.getElementById('resumo').textContent = !navigator.onLine ? 'Você está sem internet.'
+          : MODOS[modo] || (site && api && banco !== false ? 'Tudo funcionando.' : 'Estamos com instabilidade. Já estamos vendo. Nada que você fez se perdeu.');
         document.getElementById('hora').textContent = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
       }
       conferir(); setInterval(conferir, 60000);
